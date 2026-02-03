@@ -12,11 +12,11 @@ export const matchRouter = Router()
 matchRouter.get('/',async (req, res) => {
     const parsed =  listMatchesQuerySchema.safeParse(req.query)
     console.log(parsed)
-    if(!parsed){
+    if(!parsed.succes){
         return res.status(400)
             .json({
                 error: "Invalid query",
-                details: JSON.stringify(parsed.error)
+                details: parsed.error.issues
             })
     }
 
@@ -37,7 +37,6 @@ matchRouter.get('/',async (req, res) => {
         console.error(error)
         return res.status(500).json({
             error:"Failed to fetch match",
-            details: JSON.stringify(error)
         })
     }
 })
@@ -45,14 +44,16 @@ matchRouter.get('/',async (req, res) => {
 
 matchRouter.post("/", async (req, res) => {
     const parsed = createMatchSchema.safeParse(req.body);
-    const {data: {startTime, endTime, homeScore, awayScore }} = parsed;
-    if(!parsed) {
+    if(!parsed.succes) {
         return res.satus(400)
             .json({
-                error: "Not Found",
-                details: JSON.stringify(parsed.error)
+                error: "Invalid request body",
+                details: parsed.error.issues
             })
     }
+
+    const {data: {startTime, endTime, homeScore, awayScore }} = parsed;
+
 
     try{
         const [event] = await db.insert(matches)
@@ -74,7 +75,6 @@ matchRouter.post("/", async (req, res) => {
         console.error(error)
         return res.status(500).json({
             error:"Failed to create match",
-            details: JSON.stringify(error)
         })
     }
 })
