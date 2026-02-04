@@ -4,7 +4,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "node --watch src/index.js",
+    "dev": "npx kill-port 8000 && node --watch src/index.js",
     "start": "node src/index.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
@@ -24,6 +24,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.18.1"
+    "drizzle-kit": "^0.18.1",
+    "kill-port": "^2.0.1"
   }
 }

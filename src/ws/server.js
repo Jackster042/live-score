@@ -1,7 +1,7 @@
 import {WebSocket, WebSocketServer} from 'ws'
 
 function sendJson(socket, payload) {
-    if(socket.readyState !== WebSocket.OPEN) continue
+    if(socket.readyState !== WebSocket.OPEN) return
 
     socket.send(JSON.stringify(payload))
 }
@@ -39,7 +39,7 @@ export function attachWebSocketServer(server){
             client.isAlive = false
             client.ping()
         }
-    })
+    }, 3000)
 
     wss.on("close", () => clearInterval(interval))
 

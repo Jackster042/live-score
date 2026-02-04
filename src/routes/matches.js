@@ -38,7 +38,6 @@ matchRouter.get('/',async (req, res) => {
         console.error(error)
         return res.status(500).json({
             error:"Failed to fetch match",
-            details: error.details
         })
     }
 })
