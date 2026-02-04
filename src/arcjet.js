@@ -34,10 +34,12 @@ export function securityMiddleware() {
         try{
             const decision = await httpArcjet.protect(req)
 
-            if(decision.isDenied) {
-                if(decision.reason.isRateLimit()) {
-                    return res.status(429).json({error:"Too many requests"})}
-            }
+                            if (decision.isDenied()) {
+                                if (decision.reason.isRateLimit()) {
+                                        return res.status(429).json({ error: "Too many requests" })
+                                        }
+                                return res.status(403).json({ error: "Access denied" })
+                                }
         }catch(error) {
             console.error("Error while authenticating", error)
             return res.status(500).json({error:"Service Unavailable"})
