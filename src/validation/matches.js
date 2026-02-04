@@ -41,7 +41,6 @@ export const createMatchSchema = z
   .superRefine((data, ctx) => {
     const { startTime, endTime } = data;
     // Only check chronological order if both are valid ISO strings
-    if (isIsoDateString(startTime) && isIsoDateString(endTime)) {
       const start = new Date(startTime).getTime();
       const end = new Date(endTime).getTime();
       if (!(end > start)) {
@@ -51,7 +50,6 @@ export const createMatchSchema = z
           path: ["endTime"],
         });
       }
-    }
   });
 
 // 4) Update score schema: required homeScore and awayScore as coerced non-negative integers

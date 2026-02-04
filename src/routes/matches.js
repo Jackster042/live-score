@@ -9,14 +9,14 @@ import { desc} from "drizzle-orm"
 const MAX_LIMIT = 100
 
 export const matchRouter = Router()
+
 matchRouter.get('/',async (req, res) => {
     const parsed =  listMatchesQuerySchema.safeParse(req.query)
     console.log(parsed)
-    if(!parsed.succes){
+    if(!parsed.success){
         return res.status(400)
             .json({
                 error: "Invalid query",
-                details: parsed.error.issues
             })
     }
 
@@ -41,14 +41,13 @@ matchRouter.get('/',async (req, res) => {
     }
 })
 
-
 matchRouter.post("/", async (req, res) => {
+
     const parsed = createMatchSchema.safeParse(req.body);
-    if(!parsed.succes) {
-        return res.satus(400)
+    if(!parsed.success) {
+        return res.status(400)
             .json({
                 error: "Invalid request body",
-                details: parsed.error.issues
             })
     }
 
@@ -65,6 +64,10 @@ matchRouter.post("/", async (req, res) => {
                 awayScore: awayScore ?? 0,
                 status: getMatchStatus(startTime, endTime)
             }).returning();
+
+        if(res.app.locals.broadcastMatchCreated){
+            res.app.locals.broadcastMatchCreated(event)
+        }
 
         res.status(201)
             .json({
