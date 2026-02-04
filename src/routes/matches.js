@@ -17,6 +17,7 @@ matchRouter.get('/',async (req, res) => {
         return res.status(400)
             .json({
                 error: "Invalid query",
+                details: parsed.error.issues
             })
     }
 
@@ -37,6 +38,7 @@ matchRouter.get('/',async (req, res) => {
         console.error(error)
         return res.status(500).json({
             error:"Failed to fetch match",
+            details: error.details
         })
     }
 })
