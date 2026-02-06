@@ -1,4 +1,7 @@
 # Logs
+
+apminsightnode.json
+
 logs
 *.log
 npm-debug.log*
@@ -140,4 +143,3 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
 
-apminsightnode.json
