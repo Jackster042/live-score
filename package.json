@@ -1,14 +1,14 @@
 {
   "name": "live-score",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/index.js",
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "dev": "npx kill-port 8000 && node --watch src/index.js",
-    "dev:ts": "npx kill-port 8000 && tsx watch src/index.ts",
+    "dev": "npx kill-port 8000 && tsx watch src/index.ts",
     "start": "node dist/index.js",
     "worker": "node dist/worker.js",
+    "worker:dev": "tsx watch src/worker.ts",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
@@ -19,7 +19,11 @@
     "docker:scale": "docker-compose up -d --scale api=2",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint . --ext .ts,.js",
+    "lint:fix": "eslint . --ext .ts,.js --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "keywords": [],
   "author": "",
@@ -39,17 +43,26 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@faker-js/faker": "^10.3.0",
     "@types/express": "^5.0.6",
     "@types/node": "^25.3.0",
     "@types/pg": "^8.16.0",
     "@types/ws": "^8.18.1",
+    "@typescript-eslint/eslint-plugin": "^8.56.0",
+    "@typescript-eslint/parser": "^8.56.0",
     "drizzle-kit": "^0.31.9",
+    "eslint": "^10.0.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "globals": "^17.3.0",
     "kill-port": "^2.0.1",
+    "prettier": "^3.8.1",
     "supertest": "^7.2.2",
     "testcontainers": "^11.12.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.0",
     "vitest": "^4.0.18"
   }
 }

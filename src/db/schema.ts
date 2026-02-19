@@ -1,6 +1,6 @@
 /**
  * Database Schema Definitions
- * 
+ *
  * Uses Drizzle ORM with PostgreSQL.
  * Exports both table definitions and inferred types.
  */
@@ -32,7 +32,9 @@ export const matches = pgTable('matches', {
 
 export const commentary = pgTable('commentary', {
   id: serial('id').primaryKey(),
-  matchId: integer('match_id').notNull().references(() => matches.id, { onDelete: 'cascade' }),
+  matchId: integer('match_id')
+    .notNull()
+    .references(() => matches.id, { onDelete: 'cascade' }),
   minute: integer('minute').notNull(),
   sequence: integer('sequence').notNull(),
   period: integer('period').notNull(),

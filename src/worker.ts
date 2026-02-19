@@ -1,6 +1,6 @@
 /**
  * Background Worker Entry Point
- * 
+ *
  * This worker processes background jobs using BullMQ.
  * Run this file to start the worker process.
  */
@@ -15,17 +15,17 @@ console.log(`   Environment: ${config.nodeEnv}`);
 console.log(`   Redis: ${config.redisUrl.replace(/:\/\/.*@/, '://***@')}`);
 
 // Initialize services
-async function startWorker() {
+async function startWorker(): Promise<void> {
   try {
     // Initialize Redis (required for BullMQ)
     await initRedis();
-    
+
     // Initialize job queues
     initQueues();
-    
+
     // Start workers
     initWorkers();
-    
+
     console.log('\n✅ Worker is running and processing jobs...\n');
   } catch (err) {
     console.error('❌ Failed to start worker:', err);
@@ -34,24 +34,24 @@ async function startWorker() {
 }
 
 // Graceful shutdown
-async function gracefulShutdown(signal) {
+async function gracefulShutdown(signal: string): Promise<void> {
   console.log(`\n👋 Worker received ${signal}. Shutting down gracefully...`);
-  
+
   // Close workers (finish current jobs)
   await closeWorkers();
-  
+
   // Close Redis connections
   await closeRedis();
-  
+
   console.log('✅ Worker shutdown complete');
   process.exit(0);
 }
 
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => void gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => void gracefulShutdown('SIGINT'));
 
 // Start the worker
-startWorker();
+void startWorker();
 
 // Keep process alive
 setInterval(() => {

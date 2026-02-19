@@ -45,16 +45,20 @@ export async function syncMatchStatus(
   match: Match,
   updateStatus: (status: MatchStatusValue) => Promise<void>
 ): Promise<MatchStatusValue> {
+  if (!match.startTime || !match.endTime) {
+    return match.status as MatchStatusValue;
+  }
+
   const nextStatus = getMatchStatus(match.startTime, match.endTime);
-  
+
   if (!nextStatus) {
     return match.status as MatchStatusValue;
   }
-  
+
   if (match.status !== nextStatus) {
     await updateStatus(nextStatus);
     (match as Match & { status: MatchStatusValue }).status = nextStatus;
   }
-  
+
   return match.status as MatchStatusValue;
 }

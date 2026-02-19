@@ -3,10 +3,7 @@
  * Validates all environment variables at startup
  */
 
-const REQUIRED_ENV_VARS = [
-  'DATABASE_URL',
-  'REDIS_URL',
-] as const;
+const REQUIRED_ENV_VARS = ['DATABASE_URL', 'REDIS_URL'] as const;
 
 const OPTIONAL_ENV_VARS = {
   NODE_ENV: 'development',
@@ -15,9 +12,6 @@ const OPTIONAL_ENV_VARS = {
   ARCJET_MODE: 'DRY_RUN',
   ARCJET_KEY: '',
 } as const;
-
-type RequiredEnvVar = typeof REQUIRED_ENV_VARS[number];
-type OptionalEnvVar = keyof typeof OPTIONAL_ENV_VARS;
 
 export interface Config {
   nodeEnv: 'development' | 'test' | 'production';
@@ -35,7 +29,8 @@ export interface Config {
  * @throws Error if required environment variables are missing
  */
 function loadConfig(): Config {
-  const config: Record<string, string | number> = {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const config: Record<string, any> = {};
   const errors: string[] = [];
 
   // Validate required variables
@@ -51,27 +46,29 @@ function loadConfig(): Config {
   // Load optional variables with defaults
   for (const [key, defaultValue] of Object.entries(OPTIONAL_ENV_VARS)) {
     const value = process.env[key];
-    config[toCamelCase(key)] = (value && value.trim() !== '') ? value.trim() : defaultValue;
+    config[toCamelCase(key)] = value && value.trim() !== '' ? value.trim() : defaultValue;
   }
 
   // Validate NODE_ENV
   const validEnvs = ['development', 'test', 'production'] as const;
-  if (!validEnvs.includes(config.nodeEnv as typeof validEnvs[number])) {
-    errors.push(`Invalid NODE_ENV: ${config.nodeEnv}. Must be one of: ${validEnvs.join(', ')}`);
+  if (!validEnvs.includes(config['nodeEnv'] as (typeof validEnvs)[number])) {
+    errors.push(`Invalid NODE_ENV: ${config['nodeEnv']}. Must be one of: ${validEnvs.join(', ')}`);
   }
 
   // Validate PORT is a number
-  const port = parseInt(config.port as string, 10);
+  const port = parseInt(String(config['port']), 10);
   if (isNaN(port) || port < 1 || port > 65535) {
-    errors.push(`Invalid PORT: ${config.port}. Must be a valid port number (1-65535)`);
+    errors.push(`Invalid PORT: ${config['port']}. Must be a valid port number (1-65535)`);
   } else {
-    config.port = port;
+    config['port'] = port;
   }
 
   // Validate ARCJET_MODE
   const validArcjetModes = ['LIVE', 'DRY_RUN'] as const;
-  if (!validArcjetModes.includes(config.arcjetMode as typeof validArcjetModes[number])) {
-    errors.push(`Invalid ARCJET_MODE: ${config.arcjetMode}. Must be one of: ${validArcjetModes.join(', ')}`);
+  if (!validArcjetModes.includes(config['arcjetMode'] as (typeof validArcjetModes)[number])) {
+    errors.push(
+      `Invalid ARCJET_MODE: ${config['arcjetMode']}. Must be one of: ${validArcjetModes.join(', ')}`
+    );
   }
 
   // Throw if there are errors
@@ -86,7 +83,7 @@ function loadConfig(): Config {
     throw new Error('Configuration validation failed');
   }
 
-  return Object.freeze(config) as unknown as Config;
+  return Object.freeze(config as Config);
 }
 
 /**
@@ -100,15 +97,7 @@ function toCamelCase(str: string): string {
 export const config = loadConfig();
 
 // Export individual values for convenience
-export const {
-  nodeEnv,
-  port,
-  host,
-  databaseUrl,
-  redisUrl,
-  arcjetMode,
-  arcjetKey,
-} = config;
+export const { nodeEnv, port, host, databaseUrl, redisUrl, arcjetMode, arcjetKey } = config;
 
 // Helper functions
 export const isDevelopment = (): boolean => nodeEnv === 'development';

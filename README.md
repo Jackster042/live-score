@@ -7,6 +7,8 @@
 [![Redis](https://img.shields.io/badge/Redis-7-red.svg)](https://redis.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
 [![Tests](https://img.shields.io/badge/Tests-Vitest-yellow.svg)](https://vitest.dev/)
+[![Linting](https://img.shields.io/badge/Linting-ESLint-blueviolet.svg)](https://eslint.org/)
+[![Code Style](https://img.shields.io/badge/Code_Style-Prettier-ff69b4.svg)](https://prettier.io/)
 
 ---
 
@@ -19,6 +21,7 @@
 | ⏰ **Scheduled Jobs**     | Automatic match status transitions via BullMQ |
 | 🛡️ **Type Safety**        | Full TypeScript with strict mode              |
 | 🧪 **Tested**             | Comprehensive test suite with >80% coverage   |
+| 🎨 **Code Quality**       | ESLint + Prettier for consistent style        |
 | 🐳 **Containerized**      | One-command setup with Docker Compose         |
 | 📊 **Monitoring**         | Health checks and readiness probes            |
 
@@ -265,6 +268,33 @@ npx vitest run test/unit/validation.test.js
 | Unit Tests        | 90%+     |
 | Integration Tests | 80%+     |
 | Total             | 85%+     |
+
+---
+
+## 🎨 Code Quality
+
+```bash
+# Check linting
+npm run lint
+
+# Fix linting errors
+npm run lint:fix
+
+# Check formatting
+npm run format:check
+
+# Fix formatting
+npm run format
+```
+
+### VS Code Setup
+
+Install recommended extensions:
+
+- **ESLint** - Real-time linting
+- **Prettier** - Auto-format on save
+
+Format on save is enabled in `.vscode/settings.json`.
 
 ---
 

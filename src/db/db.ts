@@ -1,6 +1,6 @@
 /**
  * Database Connection
- * 
+ *
  * Configures PostgreSQL connection pool and Drizzle ORM client.
  */
 

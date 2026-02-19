@@ -1,26 +1,24 @@
 /**
  * Redis Client
- * 
+ *
  * Provides connection management and utilities for Redis operations.
  * Uses ioredis for robust connection handling and cluster support.
  */
 
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { redisUrl } from '../config/index.js';
 
 // Redis client instance
-let redis = null;
-let subscriber = null;
+let redis: InstanceType<typeof Redis> | null = null;
+let subscriber: InstanceType<typeof Redis> | null = null;
 
 /**
  * Creates a new Redis client with standard configuration
- * @param {Object} options - Additional ioredis options
- * @returns {Redis}
  */
-function createClient(options = {}) {
+function createClient(options: Partial<RedisOptions> = {}): InstanceType<typeof Redis> {
   const client = new Redis(redisUrl, {
-    retryStrategy: (times) => {
-      const delay = Math.min(times * 50, 2000);
+    retryStrategy: (times: number) => {
+      const delay = Math.min((times as number) * 50, 2000);
       console.log(`   Redis reconnecting... attempt ${times}, delay ${delay}ms`);
       return delay;
     },
@@ -38,7 +36,7 @@ function createClient(options = {}) {
     console.log('   Redis: Ready');
   });
 
-  client.on('error', (err) => {
+  client.on('error', (err: Error) => {
     console.error('   Redis Error:', err.message);
   });
 
@@ -57,9 +55,9 @@ function createClient(options = {}) {
  * Initialize Redis connections
  * Must be called before using Redis
  */
-export async function initRedis() {
+export async function initRedis(): Promise<{ redis: Redis; subscriber: Redis }> {
   if (redis) {
-    return { redis, subscriber };
+    return { redis, subscriber: subscriber! };
   }
 
   console.log('🔌 Initializing Redis...');
@@ -76,8 +74,8 @@ export async function initRedis() {
 
   // Wait for both to be ready
   await Promise.all([
-    new Promise((resolve) => redis.once('ready', resolve)),
-    new Promise((resolve) => subscriber.once('ready', resolve)),
+    new Promise<void>(resolve => redis!.once('ready', resolve)),
+    new Promise<void>(resolve => subscriber!.once('ready', resolve)),
   ]);
 
   console.log('✅ Redis initialized\n');
@@ -86,9 +84,8 @@ export async function initRedis() {
 
 /**
  * Get the main Redis client
- * @returns {Redis}
  */
-export function getRedis() {
+export function getRedis(): InstanceType<typeof Redis> {
   if (!redis) {
     throw new Error('Redis not initialized. Call initRedis() first.');
   }
@@ -97,9 +94,8 @@ export function getRedis() {
 
 /**
  * Get the subscriber Redis client
- * @returns {Redis}
  */
-export function getSubscriber() {
+export function getSubscriber(): InstanceType<typeof Redis> {
   if (!subscriber) {
     throw new Error('Redis not initialized. Call initRedis() first.');
   }
@@ -109,45 +105,44 @@ export function getSubscriber() {
 /**
  * Close Redis connections gracefully
  */
-export async function closeRedis() {
+export async function closeRedis(): Promise<void> {
   console.log('\n🔌 Closing Redis connections...');
-  
-  const promises = [];
-  
+
+  const promises: Promise<void>[] = [];
+
   if (redis) {
-    promises.push(redis.quit());
+    promises.push(redis.quit().then(() => {}));
     redis = null;
   }
-  
+
   if (subscriber) {
-    promises.push(subscriber.quit());
+    promises.push(subscriber.quit().then(() => {}));
     subscriber = null;
   }
-  
+
   await Promise.all(promises);
   console.log('✅ Redis connections closed');
 }
 
 /**
  * Publish a message to a Redis channel
- * @param {string} channel - Channel name
- * @param {Object} message - Message to publish (will be JSON stringified)
  */
-export async function publish(channel, message) {
+export async function publish(channel: string, message: unknown): Promise<void> {
   const client = getRedis();
   await client.publish(channel, JSON.stringify(message));
 }
 
 /**
  * Subscribe to a Redis channel
- * @param {string} channel - Channel name or pattern
- * @param {Function} handler - Message handler (channel, message) => void
- * @param {boolean} pattern - Whether to use psubscribe for pattern matching
  */
-export function subscribe(channel, handler, pattern = false) {
+export function subscribe(
+  channel: string,
+  handler: (receivedChannel: string, message: unknown) => void,
+  pattern = false
+): void {
   const sub = getSubscriber();
-  
-  const messageHandler = (receivedChannel, message) => {
+
+  const messageHandler = (receivedChannel: string, message: string) => {
     try {
       const parsed = JSON.parse(message);
       handler(receivedChannel, parsed);
@@ -158,41 +153,40 @@ export function subscribe(channel, handler, pattern = false) {
   };
 
   if (pattern) {
-    sub.psubscribe(channel);
-    sub.on('pmessage', (pattern, receivedChannel, message) => {
+    void sub.psubscribe(channel);
+    sub.on('pmessage', (_pattern: string, receivedChannel: string, message: string) => {
       messageHandler(receivedChannel, message);
     });
   } else {
-    sub.subscribe(channel);
+    void sub.subscribe(channel);
     sub.on('message', messageHandler);
   }
 }
 
 /**
  * Unsubscribe from a Redis channel
- * @param {string} channel - Channel name or pattern
- * @param {boolean} pattern - Whether it was a pattern subscription
  */
-export function unsubscribe(channel, pattern = false) {
+export function unsubscribe(channel: string, pattern = false): void {
   const sub = getSubscriber();
-  
+
   if (pattern) {
-    sub.punsubscribe(channel);
+    void sub.punsubscribe(channel);
   } else {
-    sub.unsubscribe(channel);
+    void sub.unsubscribe(channel);
   }
 }
 
 /**
  * Cache a value with optional TTL
- * @param {string} key - Cache key
- * @param {Object} value - Value to cache
- * @param {number} ttlSeconds - TTL in seconds (optional)
  */
-export async function cacheSet(key, value, ttlSeconds = null) {
+export async function cacheSet<T>(
+  key: string,
+  value: T,
+  ttlSeconds: number | null = null
+): Promise<void> {
   const client = getRedis();
   const serialized = JSON.stringify(value);
-  
+
   if (ttlSeconds) {
     await client.setex(key, ttlSeconds, serialized);
   } else {
@@ -202,36 +196,32 @@ export async function cacheSet(key, value, ttlSeconds = null) {
 
 /**
  * Get a cached value
- * @param {string} key - Cache key
- * @returns {Object|null} Parsed value or null if not found
  */
-export async function cacheGet(key) {
+export async function cacheGet<T>(key: string): Promise<T | null> {
   const client = getRedis();
   const value = await client.get(key);
-  
+
   if (!value) return null;
-  
+
   try {
-    return JSON.parse(value);
+    return JSON.parse(value) as T;
   } catch {
-    return value;
+    return value as unknown as T;
   }
 }
 
 /**
  * Delete a cached value
- * @param {string} key - Cache key
  */
-export async function cacheDel(key) {
+export async function cacheDel(key: string): Promise<void> {
   const client = getRedis();
   await client.del(key);
 }
 
 /**
  * Health check for Redis
- * @returns {Promise<boolean>}
  */
-export async function healthCheck() {
+export async function healthCheck(): Promise<boolean> {
   try {
     const client = getRedis();
     await client.ping();
@@ -240,3 +230,6 @@ export async function healthCheck() {
     return false;
   }
 }
+
+// Type import for Redis options
+import type { RedisOptions } from 'ioredis';

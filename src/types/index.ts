@@ -1,13 +1,21 @@
 /**
  * Shared Type Definitions
- * 
+ *
  * These types are used across the application.
  * Most types are inferred from Drizzle ORM schemas and Zod validations.
  */
 
 import type { z } from 'zod';
-import type { createMatchSchema, listMatchesQuerySchema, matchIdParamSchema, updateScoreSchema } from '../validation/matches.js';
-import type { createCommentarySchema, listCommentaryQuerySchema } from '../validation/commentary.js';
+import type {
+  createMatchSchema,
+  listMatchesQuerySchema,
+  matchIdParamSchema,
+  updateScoreSchema,
+} from '../validation/matches.js';
+import type {
+  createCommentarySchema,
+  listCommentaryQuerySchema,
+} from '../validation/commentary.js';
 
 // ==========================================
 // Match Types (from Zod schemas)
@@ -24,7 +32,7 @@ export const MATCH_STATUS = {
   FINISHED: 'finished',
 } as const;
 
-export type MatchStatus = typeof MATCH_STATUS[keyof typeof MATCH_STATUS];
+export type MatchStatus = (typeof MATCH_STATUS)[keyof typeof MATCH_STATUS];
 
 // ==========================================
 // Commentary Types (from Zod schemas)

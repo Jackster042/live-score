@@ -1,6 +1,6 @@
 /**
  * Test Data Factories
- * 
+ *
  * Generate realistic test data using Faker.js.
  * Provides consistent, randomized data for tests.
  */
@@ -16,7 +16,7 @@ export function createMatch(overrides = {}) {
   const now = new Date();
   const startTime = new Date(now.getTime() + faker.number.int({ min: 1, max: 60 }) * 60000);
   const endTime = new Date(startTime.getTime() + faker.number.int({ min: 90, max: 180 }) * 60000);
-  
+
   return {
     sport: faker.helpers.arrayElement(['soccer', 'basketball', 'tennis', 'baseball']),
     homeTeam: faker.company.name() + ' FC',
@@ -37,9 +37,9 @@ export function createMatch(overrides = {}) {
  */
 export function createMatchWithStatus(status, overrides = {}) {
   const now = new Date();
-  
+
   let startTime, endTime;
-  
+
   switch (status) {
     case 'scheduled':
       startTime = new Date(now.getTime() + 3600000); // 1 hour from now
@@ -56,7 +56,7 @@ export function createMatchWithStatus(status, overrides = {}) {
     default:
       throw new Error(`Unknown status: ${status}`);
   }
-  
+
   return createMatch({
     startTime: startTime.toISOString(),
     endTime: endTime.toISOString(),
@@ -94,9 +94,11 @@ export function createCommentary(matchId, overrides = {}) {
  * @returns {Array}
  */
 export function createMany(factory, count, overrides = {}) {
-  return Array.from({ length: count }, (_, i) => factory({
-    ...overrides,
-    // Add index to ensure unique values if needed
-    ...overrides._index && { id: i + 1 },
-  }));
+  return Array.from({ length: count }, (_, i) =>
+    factory({
+      ...overrides,
+      // Add index to ensure unique values if needed
+      ...(overrides._index && { id: i + 1 }),
+    })
+  );
 }
