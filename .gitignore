@@ -43,6 +43,7 @@ build/Release
 # Dependency directories
 node_modules/
 jspm_packages/
+docs/
 
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
@@ -143,3 +144,5 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
 
+
+.early.coverage

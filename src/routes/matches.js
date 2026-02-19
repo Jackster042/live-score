@@ -1,9 +1,10 @@
-import { Router} from "express"
-import {createMatchSchema, listMatchesQuerySchema} from "../validation/matches.js";
-import {db} from "../db/db.js";
-import {matches} from "../db/schema.js";
-import {getMatchStatus} from "../utls/match-status.js";
-import { desc} from "drizzle-orm"
+import { Router } from "express"
+import { createMatchSchema, listMatchesQuerySchema } from "../validation/matches.js";
+import { db } from "../db/db.js";
+import { matches } from "../db/schema.js";
+import { getMatchStatus } from "../utls/match-status.js";
+import { desc } from "drizzle-orm"
+import { initQueues, scheduleMatchStatusJobs } from "../jobs/queue.js";
 
 // TODO: SETUP CONSTANT FILE FOR THESE TYPE OF VALUES
 const MAX_LIMIT = 100
@@ -66,8 +67,18 @@ matchRouter.post("/", async (req, res) => {
                 status: getMatchStatus(startTime, endTime)
             }).returning();
 
-        if(res.app.locals.broadcastMatchCreated){
+        // Broadcast to WebSocket clients
+        if (res.app.locals.broadcastMatchCreated) {
             res.app.locals.broadcastMatchCreated(event)
+        }
+
+        // Schedule automatic status transition jobs
+        try {
+            initQueues(); // Ensure queues are initialized
+            await scheduleMatchStatusJobs(event.id, new Date(startTime), new Date(endTime));
+        } catch (jobErr) {
+            // Log but don't fail request - jobs are non-critical
+            console.error('Failed to schedule status jobs:', jobErr);
         }
 
         res.status(201)
