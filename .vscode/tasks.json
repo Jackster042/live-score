@@ -1,0 +1,84 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start Docker",
+      "type": "shell",
+      "command": "docker-compose up -d postgres redis",
+      "group": "build",
+      "presentation": {
+        "panel": "shared",
+        "group": "dev-env"
+      }
+    },
+    {
+      "label": "Redis Monitor",
+      "type": "shell",
+      "command": "docker exec -it live-score-redis redis-cli monitor",
+      "group": "build",
+      "presentation": {
+        "panel": "new",
+        "group": "dev-env"
+      },
+      "dependsOn": "Start Docker"
+    },
+    {
+      "label": "PostgreSQL Logs",
+      "type": "shell",
+      "command": "docker logs -f live-score-postgres",
+      "group": "build",
+      "presentation": {
+        "panel": "new",
+        "group": "dev-env"
+      },
+      "dependsOn": "Start Docker"
+    },
+    {
+      "label": "API Server",
+      "type": "shell",
+      "command": "npm run dev:ts",
+      "group": "build",
+      "presentation": {
+        "panel": "new",
+        "group": "dev-env"
+      },
+      "dependsOn": "Start Docker"
+    },
+    {
+      "label": "Worker",
+      "type": "shell",
+      "command": "npm run worker",
+      "group": "build",
+      "presentation": {
+        "panel": "new",
+        "group": "dev-env"
+      },
+      "dependsOn": "Start Docker"
+    },
+    {
+      "label": "Dev Environment",
+      "dependsOn": [
+        "Redis Monitor",
+        "PostgreSQL Logs",
+        "API Server",
+        "Worker"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "runOptions": {
+        "runOn": "default"
+      }
+    },
+    {
+      "label": "Stop All",
+      "type": "shell",
+      "command": "docker-compose down",
+      "group": "build",
+      "presentation": {
+        "panel": "shared"
+      }
+    }
+  ]
+}

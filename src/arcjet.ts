@@ -7,7 +7,7 @@ const arcjetMode = process.env['ARCJET_MODE'] === 'DRY_RUN' ? 'DRY_RUN' : 'LIVE'
 
 if (!arcjetKey) throw new Error('No arcjetKey provided');
 
-export const httpArcjet = arcjet
+export const httpArcjet = arcjetKey && arcjetKey !== 'ajkey_test_local_development_key'
   ? arcjet({
       key: arcjetKey,
       rules: [
@@ -18,7 +18,7 @@ export const httpArcjet = arcjet
     })
   : null;
 
-export const wsArcjet = arcjet
+export const wsArcjet = arcjetKey && arcjetKey !== 'ajkey_test_local_development_key'
   ? arcjet({
       key: arcjetKey,
       rules: [

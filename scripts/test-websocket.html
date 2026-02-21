@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Score - WebSocket Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #22c55e;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .panel {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .panel h2 {
+            margin-bottom: 15px;
+            color: #64748b;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .status.connected {
+            background: #166534;
+            color: #86efac;
+        }
+        
+        .status.disconnected {
+            background: #991b1b;
+            color: #fca5a5;
+        }
+        
+        .status.connecting {
+            background: #854d0e;
+            color: #fde047;
+        }
+        
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+        
+        .dot.pulse {
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #3b82f6;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        button:disabled {
+            background: #475569;
+            cursor: not-allowed;
+        }
+        
+        button.secondary {
+            background: #64748b;
+        }
+        
+        button.success {
+            background: #22c55e;
+        }
+        
+        .messages {
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            background: #0f172a;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 3px solid;
+        }
+        
+        .message.incoming {
+            background: #14532d;
+            border-color: #22c55e;
+        }
+        
+        .message.outgoing {
+            background: #1e3a8a;
+            border-color: #3b82f6;
+        }
+        
+        .message.system {
+            background: #422006;
+            border-color: #ca8a04;
+        }
+        
+        .message .time {
+            color: #94a3b8;
+            font-size: 10px;
+            margin-bottom: 4px;
+        }
+        
+        .message .content {
+            color: #f1f5f9;
+            word-break: break-all;
+        }
+        
+        .match-card {
+            background: #334155;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .match-card.live {
+            border: 2px solid #22c55e;
+        }
+        
+        .match-card .teams {
+            font-weight: 600;
+        }
+        
+        .match-card .score {
+            font-size: 24px;
+            font-weight: 700;
+            color: #22c55e;
+        }
+        
+        .match-card .status {
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        
+        .goal-pulse {
+            animation: goalPulse 2s ease-in-out;
+        }
+        
+        @keyframes goalPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+            50% { box-shadow: 0 0 0 20px rgba(34, 197, 94, 0); }
+        }
+        
+        input[type="number"] {
+            padding: 8px 12px;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            background: #0f172a;
+            color: white;
+            font-size: 14px;
+            width: 80px;
+        }
+        
+        label {
+            font-size: 14px;
+            color: #94a3b8;
+        }
+        
+        .form-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚽ Live Score WebSocket Test</h1>
+        
+        <!-- Connection Status -->
+        <div class="panel">
+            <h2>Connection</h2>
+            <div id="connectionStatus" class="status disconnected">
+                <span class="dot"></span>
+                <span>Disconnected</span>
+            </div>
+            <div class="controls">
+                <button id="connectBtn" onclick="connect()">Connect</button>
+                <button id="disconnectBtn" onclick="disconnect()" disabled class="secondary">Disconnect</button>
+            </div>
+        </div>
+        
+        <!-- Match Selection -->
+        <div class="panel">
+            <h2>Subscribe to Match</h2>
+            <div class="form-group">
+                <label>Match ID:</label>
+                <input type="number" id="matchId" value="1" min="1">
+                <button onclick="subscribeToMatch()">Subscribe</button>
+                <button onclick="unsubscribeFromMatch()" class="secondary">Unsubscribe</button>
+            </div>
+            <div class="controls">
+                <button onclick="subscribeToMatch(1)" class="success">Sub Match 1 (Live)</button>
+                <button onclick="subscribeToMatch(2)">Sub Match 2</button>
+                <button onclick="subscribeToMatch(3)">Sub Match 3</button>
+            </div>
+        </div>
+        
+        <!-- Live Match Display -->
+        <div class="panel">
+            <h2>Live Match</h2>
+            <div id="matchDisplay" class="match-card" style="display: none;">
+                <div class="teams" id="matchTeams">Team A vs Team B</div>
+                <div>
+                    <span class="score" id="matchScore">0-0</span>
+                    <span class="status" id="matchTime">0'</span>
+                </div>
+            </div>
+            <div id="noMatch" style="color: #64748b; text-align: center; padding: 20px;">
+                Not subscribed to any match
+            </div>
+        </div>
+        
+        <!-- Messages Log -->
+        <div class="panel">
+            <h2>Messages <button onclick="clearMessages()" class="secondary" style="float: right; padding: 4px 12px; font-size: 12px;">Clear</button></h2>
+            <div id="messages" class="messages">
+                <div class="message system">
+                    <div class="time">System</div>
+                    <div class="content">Click "Connect" to start testing WebSocket</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Test Actions -->
+        <div class="panel">
+            <h2>Test Actions</h2>
+            <div class="controls">
+                <button onclick="sendPing()">Send Ping</button>
+                <button onclick="simulateGoal()" class="success">Simulate Goal</button>
+                <button onclick="requestMatchList()">Get Matches</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let subscribedMatchId = null;
+        
+        const connectionStatus = document.getElementById('connectionStatus');
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const messagesDiv = document.getElementById('messages');
+        const matchDisplay = document.getElementById('matchDisplay');
+        const noMatch = document.getElementById('noMatch');
+        const matchTeams = document.getElementById('matchTeams');
+        const matchScore = document.getElementById('matchScore');
+        const matchTime = document.getElementById('matchTime');
+        
+        function updateStatus(status, text) {
+            connectionStatus.className = `status ${status}`;
+            connectionStatus.innerHTML = `
+                <span class="dot ${status === 'connected' ? 'pulse' : ''}"></span>
+                <span>${text}</span>
+            `;
+            
+            connectBtn.disabled = status === 'connected';
+            disconnectBtn.disabled = status !== 'connected';
+        }
+        
+        function addMessage(type, content) {
+            const time = new Date().toLocaleTimeString();
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.innerHTML = `
+                <div class="time">${time}</div>
+                <div class="content">${escapeHtml(content)}</div>
+            `;
+            messagesDiv.insertBefore(messageDiv, messagesDiv.firstChild);
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function connect() {
+            updateStatus('connecting', 'Connecting...');
+            
+            ws = new WebSocket('ws://localhost:3000/ws');
+            
+            ws.onopen = () => {
+                updateStatus('connected', 'Connected');
+                addMessage('system', 'WebSocket connection established');
+            };
+            
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    handleMessage(data);
+                } catch (e) {
+                    addMessage('incoming', `Raw: ${event.data}`);
+                }
+            };
+            
+            ws.onclose = () => {
+                updateStatus('disconnected', 'Disconnected');
+                addMessage('system', 'WebSocket connection closed');
+                subscribedMatchId = null;
+                updateMatchDisplay();
+            };
+            
+            ws.onerror = (error) => {
+                updateStatus('disconnected', 'Error');
+                addMessage('system', `WebSocket error: ${error.message || 'Unknown error'}`);
+            };
+        }
+        
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+        
+        function subscribeToMatch(id) {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                addMessage('system', 'Not connected! Click Connect first.');
+                return;
+            }
+            
+            const matchId = id || document.getElementById('matchId').value;
+            subscribedMatchId = matchId;
+            
+            const message = JSON.stringify({
+                action: 'subscribe',
+                matchId: parseInt(matchId)
+            });
+            
+            ws.send(message);
+            addMessage('outgoing', `Subscribe to match ${matchId}`);
+            
+            // Fetch match details via HTTP
+            fetchMatchDetails(matchId);
+        }
+        
+        function unsubscribeFromMatch() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) return;
+            
+            const matchId = document.getElementById('matchId').value;
+            
+            const message = JSON.stringify({
+                action: 'unsubscribe',
+                matchId: parseInt(matchId)
+            });
+            
+            ws.send(message);
+            addMessage('outgoing', `Unsubscribe from match ${matchId}`);
+            
+            if (subscribedMatchId == matchId) {
+                subscribedMatchId = null;
+                updateMatchDisplay();
+            }
+        }
+        
+        function fetchMatchDetails(matchId) {
+            fetch(`http://localhost:3000/api/matches/${matchId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.data) {
+                        matchTeams.textContent = `${data.data.homeTeam} vs ${data.data.awayTeam}`;
+                        matchScore.textContent = `${data.data.homeScore}-${data.data.awayScore}`;
+                        matchTime.textContent = data.data.status === 'live' ? 'LIVE' : data.data.status;
+                        matchDisplay.className = `match-card ${data.data.status === 'live' ? 'live' : ''}`;
+                        updateMatchDisplay();
+                    }
+                })
+                .catch(err => {
+                    addMessage('system', `Failed to fetch match: ${err.message}`);
+                });
+        }
+        
+        function updateMatchDisplay() {
+            if (subscribedMatchId) {
+                matchDisplay.style.display = 'flex';
+                noMatch.style.display = 'none';
+            } else {
+                matchDisplay.style.display = 'none';
+                noMatch.style.display = 'block';
+            }
+        }
+        
+        function handleMessage(data) {
+            addMessage('incoming', JSON.stringify(data, null, 2));
+            
+            if (data.type === 'score:update') {
+                matchScore.textContent = `${data.data.homeScore}-${data.data.awayScore}`;
+            }
+            
+            if (data.type === 'notification:goal') {
+                matchDisplay.classList.add('goal-pulse');
+                setTimeout(() => matchDisplay.classList.remove('goal-pulse'), 2000);
+            }
+        }
+        
+        function sendPing() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                addMessage('system', 'Not connected!');
+                return;
+            }
+            
+            ws.send(JSON.stringify({ action: 'ping' }));
+            addMessage('outgoing', 'Ping');
+        }
+        
+        function simulateGoal() {
+            if (!subscribedMatchId) {
+                addMessage('system', 'Subscribe to a match first!');
+                return;
+            }
+            
+            // Send a test commentary via HTTP API
+            fetch(`http://localhost:3000/api/matches/${subscribedMatchId}/commentary`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    minute: 75,
+                    message: 'TEST GOAL from WebSocket tester!',
+                    eventType: 'goal'
+                })
+            })
+            .then(() => addMessage('system', 'Sent test goal commentary'))
+            .catch(err => addMessage('system', `Error: ${err.message}`));
+        }
+        
+        function requestMatchList() {
+            fetch('http://localhost:3000/api/matches')
+                .then(res => res.json())
+                .then(data => {
+                    addMessage('system', `Found ${data.data?.length || 0} matches`);
+                    console.log('Matches:', data);
+                })
+                .catch(err => addMessage('system', `Error: ${err.message}`));
+        }
+        
+        function clearMessages() {
+            messagesDiv.innerHTML = `
+                <div class="message system">
+                    <div class="time">System</div>
+                    <div class="content">Messages cleared</div>
+                </div>
+            `;
+        }
+        
+        // Auto-connect on load (optional)
+        // window.addEventListener('load', connect);
+    </script>
+</body>
+</html>

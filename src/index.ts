@@ -75,8 +75,8 @@ app.get('/', (_req, res) => {
 app.use(securityMiddleware());
 
 // Routes
-app.use('/matches', matchRouter);
-app.use('/matches/:id/commentary', commentaryRouter);
+app.use('/api/matches', matchRouter);
+app.use('/api/matches/:id/commentary', commentaryRouter);
 
 // Initialize WebSocket server
 const { broadcastMatchCreated, broadcastCommentary } = attachWebSocketServer(server);

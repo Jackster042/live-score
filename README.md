@@ -1,437 +1,432 @@
-# 🏆 Live Score API
+# Live Score API
 
-> A production-ready, horizontally scalable real-time sports scoring API
+A production-ready, horizontally-scalable real-time sports scoring platform built with Node.js, TypeScript, and modern cloud-native architecture.
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-20-green.svg)](https://nodejs.org/)
-[![Redis](https://img.shields.io/badge/Redis-7-red.svg)](https://redis.io/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
-[![Tests](https://img.shields.io/badge/Tests-Vitest-yellow.svg)](https://vitest.dev/)
-[![Linting](https://img.shields.io/badge/Linting-ESLint-blueviolet.svg)](https://eslint.org/)
-[![Code Style](https://img.shields.io/badge/Code_Style-Prettier-ff69b4.svg)](https://prettier.io/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-20+-green?logo=node.js)](https://nodejs.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?logo=postgresql)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/Redis-7-red?logo=redis)](https://redis.io/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
----
+## Overview
 
-## ✨ Features
+Live Score API is a high-performance backend system designed for real-time sports event tracking. It supports horizontal scaling, real-time WebSocket broadcasts, automated match status transitions, and comprehensive monitoring.
 
-| Feature                   | Description                                   |
-| ------------------------- | --------------------------------------------- |
-| 🔄 **Real-time Updates**  | WebSocket broadcasts for live match updates   |
-| 📈 **Horizontal Scaling** | Redis pub/sub enables multiple API instances  |
-| ⏰ **Scheduled Jobs**     | Automatic match status transitions via BullMQ |
-| 🛡️ **Type Safety**        | Full TypeScript with strict mode              |
-| 🧪 **Tested**             | Comprehensive test suite with >80% coverage   |
-| 🎨 **Code Quality**       | ESLint + Prettier for consistent style        |
-| 🐳 **Containerized**      | One-command setup with Docker Compose         |
-| 📊 **Monitoring**         | Health checks and readiness probes            |
+### Key Features
 
----
+- **Real-time Updates**: WebSocket-based live scoring with sub-100ms latency
+- **Horizontal Scaling**: Multiple API instances share state via Redis Pub/Sub
+- **TypeScript**: Fully typed codebase with strict mode enabled
+- **Background Jobs**: BullMQ for scheduled match status transitions
+- **Database**: PostgreSQL with Drizzle ORM for type-safe queries
+- **Monitoring**: Docker Stats, Redis Monitor, and Artillery load testing
+- **Security**: Arcjet rate limiting and request validation
+- **Testing**: Vitest unit tests, integration tests, and load testing suite
 
-## 🏗️ Architecture
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Load Balancer                             │
-│                     (Nginx / Cloud LB)                           │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-           ┌──────────────────┼──────────────────┐
-           │                  │                  │
-    ┌──────▼──────┐    ┌──────▼──────┐    ┌──────▼──────┐
-    │  API Inst 1 │    │  API Inst 2 │    │  API Inst N │
-    │   :8000     │    │   :8001     │    │   :800N     │
-    └──────┬──────┘    └──────┬──────┘    └──────┬──────┘
-           │                  │                  │
-           └──────────────────┼──────────────────┘
-                              │
-    ┌─────────────────────────┼─────────────────────────┐
-    │                    Redis Cluster                   │
-    │  ┌─────────────────────────────────────────────┐  │
-    │  │  • Pub/Sub (broadcast sync)                 │  │
-    │  │  • Job Queues (BullMQ)                      │  │
-    │  │  • Caching                                  │  │
-    │  └─────────────────────────────────────────────┘  │
-    └───────────────────────────────────────────────────┘
-                              │
-    ┌─────────────────────────┼─────────────────────────┐
-    │                  PostgreSQL                        │
-    │         (Matches, Commentary)                      │
-    └───────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              CLIENT LAYER                                    │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
+│  │   Web App   │  │  Mobile App │  │   TV App    │  │   PWA       │        │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘        │
+└─────────┼────────────────┼────────────────┼────────────────┼────────────────┘
+          │                │                │                │
+          └────────────────┴────────────────┴────────────────┘
+                               │
+                    ┌──────────┴──────────┐
+                    │   Load Balancer     │
+                    │   (Nginx/Cloudflare)│
+                    └──────────┬──────────┘
+                               │
+          ┌────────────────────┼────────────────────┐
+          │                    │                    │
+┌─────────▼─────────┐ ┌────────▼────────┐ ┌────────▼────────┐
+│  API Instance 1   │ │  API Instance 2 │ │  API Instance N │
+│  (Port 8000)      │ │  (Port 8001)    │ │  (Port 800N)    │
+│                   │ │                 │ │                 │
+│  ┌─────────────┐  │ │  ┌─────────────┐│ │  ┌─────────────┐│
+│  │   Express   │  │ │  │   Express   ││ │  │   Express   ││
+│  │  WebSocket  │  │ │  │  WebSocket  ││ │  │  WebSocket  ││
+│  └──────┬──────┘  │ │  └──────┬──────┘│ │  └──────┬──────┘│
+└─────────┼─────────┘ └─────────┼────────┘ └─────────┼────────┘
+          │                     │                    │
+          └─────────────────────┼────────────────────┘
+                               │
+                    ┌──────────┴──────────┐
+                    │      REDIS          │
+                    │   ┌─────────────┐   │
+                    │   │   Pub/Sub   │   │  ◄── Cross-instance
+                    │   └─────────────┘   │      broadcasting
+                    │   ┌─────────────┐   │
+                    │   │    Queue    │   │  ◄── BullMQ jobs
+                    │   └─────────────┘   │
+                    │   ┌─────────────┐   │
+                    │   │    Cache    │   │  ◄── Response caching
+                    │   └─────────────┘   │
+                    └──────────┬──────────┘
+                               │
+                    ┌──────────┴──────────┐
+                    │    POSTGRESQL       │
+                    │                     │
+                    │  • matches          │
+                    │  • commentary       │
+                    │  • teams            │
+                    │  • leagues          │
+                    └─────────────────────┘
 ```
 
-### Key Design Decisions
+## Tech Stack
 
-| Decision              | Rationale                                     |
-| --------------------- | --------------------------------------------- |
-| **Redis Pub/Sub**     | Enables horizontal scaling vs sticky sessions |
-| **Separate Worker**   | Independent scaling, fault isolation          |
-| **Delayed Jobs**      | Precise scheduling vs cron polling            |
-| **TypeScript Strict** | Catch bugs at compile time                    |
-| **Testcontainers**    | Isolated integration tests                    |
+| Layer            | Technology     | Purpose                      |
+| ---------------- | -------------- | ---------------------------- |
+| **Language**     | TypeScript 5.9 | Type-safe development        |
+| **Runtime**      | Node.js 20+    | Server runtime               |
+| **Framework**    | Express 5      | HTTP API                     |
+| **WebSocket**    | ws library     | Real-time communication      |
+| **ORM**          | Drizzle ORM    | Database abstraction         |
+| **Database**     | PostgreSQL 16  | Primary data store           |
+| **Cache/Queue**  | Redis 7        | Pub/Sub, caching, job queues |
+| **Jobs**         | BullMQ         | Background job processing    |
+| **Security**     | Arcjet         | Rate limiting, bot detection |
+| **Validation**   | Zod            | Schema validation            |
+| **Testing**      | Vitest         | Unit and integration tests   |
+| **Load Testing** | Artillery      | Performance testing          |
 
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- [Docker](https://docs.docker.com/get-docker/) 20.10+
-- [Docker Compose](https://docs.docker.com/compose/install/) 2.0+
-- Node.js 20+ (for local development)
-
-### One-Command Setup
-
-```bash
-# Clone repository
-git clone https://github.com/yourusername/live-score.git
-cd live-score
-
-# Start all services
-docker-compose up -d
-
-# Verify installation
-curl http://localhost:8000/health
-```
-
-### Scale to Multiple Instances
-
-```bash
-# Run 2 API instances
-docker-compose up -d --scale api=2
-
-# Verify both instances share broadcasts
-# Connect clients to different ports, broadcasts sync via Redis
-```
-
----
-
-## 📁 Project Structure
+## Project Structure
 
 ```
 live-score/
-├── docker-compose.yml          # Multi-service orchestration
-├── Dockerfile                  # Production container
-├── tsconfig.json              # TypeScript configuration
-├── vitest.config.js           # Test configuration
 ├── src/
-│   ├── index.ts               # API entry point
-│   ├── worker.ts              # Background worker entry
-│   ├── config/                # Environment configuration
-│   ├── db/                    # Database schema & connection
-│   ├── routes/                # REST API endpoints
-│   ├── validation/            # Zod schemas
-│   ├── redis/                 # Redis client & pub/sub
-│   ├── jobs/                  # BullMQ queues & processors
-│   ├── ws/                    # WebSocket server
-│   └── types/                 # Shared TypeScript types
-├── test/
-│   ├── unit/                  # Unit tests
-│   ├── integration/           # API integration tests
-│   └── helpers/               # Test factories
-├── docs/                      # Phase documentation
-│   ├── phase-1-infrastructure.md
-│   ├── phase-2-redis-integration.md
-│   ├── phase-3-background-jobs.md
-│   ├── phase-4-testing.md
-│   └── phase-5-typescript.md
-└── drizzle/                   # Database migrations
+│   ├── index.ts                 # API entry point
+│   ├── worker.ts                # Background worker entry
+│   ├── db/
+│   │   ├── schema.ts            # Database schema (Drizzle)
+│   │   └── db.ts                # Database connection
+│   ├── jobs/
+│   │   ├── queue.ts             # BullMQ queue setup
+│   │   ├── worker.ts            # Job processors
+│   │   └── processors/          # Job handlers
+│   ├── redis/
+│   │   ├── client.ts            # Redis connection & pub/sub
+│   │   └── keys.ts              # Key naming conventions
+│   ├── routes/
+│   │   ├── matches.ts           # Match CRUD API
+│   │   └── commentary.ts        # Commentary API
+│   ├── ws/
+│   │   └── server.ts            # WebSocket server
+│   ├── services/
+│   │   └── providers/           # External API adapters
+│   ├── config/                  # Configuration management
+│   ├── validation/              # Zod schemas
+│   └── types/                   # TypeScript types
+├── scripts/
+│   ├── seed.ts                  # Database seeding
+│   ├── load-test.yml            # Artillery load test config
+│   ├── test-websocket.html      # WebSocket test client
+│   ├── test-websocket-scaling.html  # Horizontal scaling test
+│   └── *.ps1                    # PowerShell dev scripts│
+├── test/                        # Test suites
+├── docker-compose.yml           # Infrastructure setup
+└── README.md                    # This file
 ```
 
----
+## Quick Start
 
-## 🔌 API Documentation
+### Prerequisites
+
+- Node.js 20+
+- Docker Desktop
+- Git
+
+### Installation
+
+```bash
+# Clone repository
+git clone <your-repo-url>
+cd live-score
+
+# Install dependencies
+npm install
+
+# Start infrastructure (PostgreSQL + Redis)
+npm run docker:up
+
+# Push database schema
+npx drizzle-kit push
+
+# Seed test data
+npm run db:seed
+
+# Build project
+npm run build
+```
+
+### Development
+
+#### Option 1: Interactive Menu (Recommended)
+
+```bash
+npm run dev
+```
+
+Select from:
+
+- `[1] BASIC Setup` - 5 windows (API, Worker, Redis, Postgres, Test)
+- `[2] FULL Setup` - 7 windows (+ Docker Stats, Load Test ready)
+- `[3] Windows Terminal Tabs` - All services in one window
+- `[4] Docker Stats` - Container monitoring
+- `[5] Load Test` - Run Artillery tests
+- `[6] Horizontal Scaling` - Verify Redis Pub/Sub
+
+#### Option 2: Manual Start
+
+```bash
+# Terminal 1: Start API
+npm run dev:ts
+
+# Terminal 2: Start Worker
+npm run worker:dev
+
+# Terminal 3: Monitor Redis
+npm run redis:monitor
+```
+
+### Verification
+
+```bash
+# Health check
+curl http://localhost:8000/health
+
+# Get matches
+curl http://localhost:8000/api/matches
+
+# Get match commentary
+curl http://localhost:8000/api/matches/1/commentary
+
+# Open WebSocket test client
+start scripts/test-websocket.html
+```
+
+## API Documentation
 
 ### REST Endpoints
 
-| Method | Endpoint                  | Description     |
-| ------ | ------------------------- | --------------- |
-| `GET`  | `/health`                 | Health check    |
-| `GET`  | `/health/ready`           | Readiness probe |
-| `GET`  | `/matches`                | List matches    |
-| `POST` | `/matches`                | Create match    |
-| `GET`  | `/matches/:id/commentary` | List commentary |
-| `POST` | `/matches/:id/commentary` | Add commentary  |
+| Method | Endpoint                      | Description                        |
+| ------ | ----------------------------- | ---------------------------------- |
+| GET    | `/health`                     | Health check with service status   |
+| GET    | `/api/matches`                | List all matches (with pagination) |
+| POST   | `/api/matches`                | Create new match                   |
+| GET    | `/api/matches/:id`            | Get match details                  |
+| GET    | `/api/matches/:id/commentary` | Get match commentary               |
+| POST   | `/api/matches/:id/commentary` | Add commentary event               |
 
 ### WebSocket Protocol
 
-**Connection:** `ws://localhost:8000/ws`
+**Connect:** `ws://localhost:8000/ws`
 
 **Client → Server:**
 
 ```json
-// Subscribe to match
-{ "type": "subscribe", "matchId": 123 }
-
-// Unsubscribe
-{ "type": "unsubscribe", "matchId": 123 }
+{"action": "subscribe", "matchId": 1}
+{"action": "unsubscribe", "matchId": 1}
 ```
 
 **Server → Client:**
 
 ```json
-// Welcome
-{ "type": "welcome", "message": "Connected to Live Score API" }
-
-// Match created (broadcast to all)
-{ "type": "match_created", "data": { "id": 1, ... } }
-
-// Commentary (broadcast to subscribers)
-{ "type": "commentary", "data": { "matchId": 123, ... } }
+{"type": "score:update", "matchId": 1, "data": {"homeScore": 2, "awayScore": 1}}
+{"type": "commentary:new", "matchId": 1, "data": {...}}
+{"type": "match:status", "matchId": 1, "data": {"status": "live"}}
 ```
 
-### Example Requests
+## Testing
+
+### Unit Tests
 
 ```bash
-# Create a match
-curl -X POST http://localhost:8000/matches \
-  -H "Content-Type: application/json" \
-  -d '{
-    "sport": "soccer",
-    "homeTeam": "Liverpool",
-    "awayTeam": "Arsenal",
-    "startTime": "2026-02-20T15:00:00Z",
-    "endTime": "2026-02-20T17:00:00Z"
-  }'
-
-# Add commentary
-curl -X POST http://localhost:8000/matches/1/commentary \
-  -H "Content-Type: application/json" \
-  -d '{
-    "minute": 23,
-    "message": "Amazing goal by Salah!",
-    "eventType": "goal"
-  }'
-
-# Connect via WebSocket
-wscat -c ws://localhost:8000/ws
-> { "type": "subscribe", "matchId": 1 }
+npm test
 ```
 
----
+Coverage: 29 tests covering validation, match status logic, and utilities.
 
-## ⚙️ Configuration
+### Integration Tests
+
+```bash
+# Requires running PostgreSQL
+npm run test:integration
+```
+
+### Load Testing
+
+```bash
+# Install Artillery (one-time)
+npm install -g artillery
+
+# Run load test
+npm run test:load
+```
+
+Test configuration: `scripts/load-test.yml`
+
+- 4 phases: Warm up → Normal → Peak → Cool down
+- Tests match browsing, commentary, and health endpoints
+- ~5 minute duration
+
+### Horizontal Scaling Test
+
+Verify multiple instances share broadcasts via Redis:
+
+```bash
+npm run test:scaling
+```
+
+Or use browser test:
+
+```bash
+start scripts/test-websocket-scaling.html
+```
+
+## Horizontal Scaling
+
+### Running Multiple Instances
+
+```bash
+# Instance 1
+$env:PORT=8000
+npm run dev:ts
+
+# Instance 2
+$env:PORT=8001
+npm run dev:ts
+```
+
+### Architecture Benefits
+
+- **Stateless API**: Any instance can handle any request
+- **Redis Pub/Sub**: WebSocket broadcasts reach all instances
+- **Shared Database**: Consistent data across all instances
+- **BullMQ**: Distributed job processing
+
+### Verification
+
+1. Connect WebSocket clients to different ports
+2. Send update via Instance 1
+3. Verify clients on Instance 2 receive it
+
+## Database Schema
+
+### Core Tables
+
+**matches** - Match data and scores
+
+- `id`, `homeTeam`, `awayTeam`, `homeScore`, `awayScore`
+- `status`: scheduled | live | halftime | finished
+- `startTime`, `endTime`, `elapsedSeconds`
+- `stats` (JSONB): possession, shots, cards, etc.
+
+**commentary** - Match events
+
+- `matchId`, `minute`, `eventType`
+- `actor`, `team`, `message`
+- `metadata` (JSONB): assists, substitutions, VAR decisions
+
+See [DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md) for complete documentation.
+
+## Configuration
 
 ### Environment Variables
 
-| Variable       | Required | Default       | Description                  |
-| -------------- | -------- | ------------- | ---------------------------- |
-| `DATABASE_URL` | ✅       | -             | PostgreSQL connection string |
-| `REDIS_URL`    | ✅       | -             | Redis connection string      |
-| `NODE_ENV`     | ❌       | `development` | Environment mode             |
-| `PORT`         | ❌       | `8000`        | API server port              |
-| `HOST`         | ❌       | `0.0.0.0`     | Bind address                 |
-| `ARCJET_MODE`  | ❌       | `DRY_RUN`     | Security mode                |
-| `ARCJET_KEY`   | ❌       | -             | Arcjet API key               |
+```env
+# Database
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/live_score
 
-### Local Development
-
-```bash
-# Copy environment template
-cp .env.example .env
-
-# Edit .env with your values
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/livescore
+# Redis
 REDIS_URL=redis://localhost:6379
 
-# Start infrastructure
-docker-compose up -d postgres redis
+# Server
+PORT=8000
+NODE_ENV=development
 
-# Run API
-npm run dev
-
-# In another terminal, run worker
-npm run worker
+# Security
+ARCJET_KEY=your_key_here
 ```
 
----
+See `.env.example` for all options.
 
-## 🧪 Testing
+## Monitoring
+
+### Docker Stats
 
 ```bash
-# Run all tests
-npm test
-
-# Watch mode
-npm run test:watch
-
-# Coverage report
-npm run test:coverage
-
-# Run specific file
-npx vitest run test/unit/validation.test.js
+npm run docker:stats
 ```
 
-### Test Coverage
+Shows real-time CPU, memory, and network for PostgreSQL and Redis containers.
 
-| Type              | Coverage |
-| ----------------- | -------- |
-| Unit Tests        | 90%+     |
-| Integration Tests | 80%+     |
-| Total             | 85%+     |
-
----
-
-## 🎨 Code Quality
+### Redis Monitor
 
 ```bash
-# Check linting
-npm run lint
-
-# Fix linting errors
-npm run lint:fix
-
-# Check formatting
-npm run format:check
-
-# Fix formatting
-npm run format
+npm run redis:monitor
 ```
 
-### VS Code Setup
+View all Redis commands in real-time to verify pub/sub broadcasts.
 
-Install recommended extensions:
-
-- **ESLint** - Real-time linting
-- **Prettier** - Auto-format on save
-
-Format on save is enabled in `.vscode/settings.json`.
-
----
-
-## 🛠️ Development
-
-### Build TypeScript
+### PostgreSQL Logs
 
 ```bash
-# Type check
-npm run typecheck
-
-# Build to dist/
-npm run build
-
-# Run compiled code
-npm start
+npm run postgres:logs
 ```
 
-### Database Migrations
-
-```bash
-# Generate migration
-npm run db:generate
-
-# Apply migrations
-npm run db:migrate
-
-# Open Drizzle Studio
-npm run db:studio
-```
-
----
-
-## 📊 Performance
-
-| Metric                   | Value             |
-| ------------------------ | ----------------- |
-| API Response Time (P95)  | < 50ms            |
-| WebSocket Broadcast      | ~0.1ms per client |
-| Redis Latency            | < 1ms (local)     |
-| Max Connections/Instance | ~10,000           |
-| Horizontal Scaling       | Linear with Redis |
-
----
-
-## 🐳 Docker Commands
-
-```bash
-# Start all services
-npm run docker:up
-
-# Scale API instances
-npm run docker:scale
-
-# View logs
-npm run docker:logs
-
-# Stop all services
-npm run docker:down
-
-# Rebuild containers
-docker-compose up -d --build
-```
-
----
-
-## 🎯 Portfolio Highlights
-
-This project demonstrates:
-
-### Architecture Skills
-
-- **Distributed Systems:** Redis pub/sub for cross-instance communication
-- **Horizontal Scaling:** Multiple API instances with shared state
-- **Background Processing:** BullMQ for reliable job processing
-- **Containerization:** Docker Compose for local development
-
-### Code Quality
-
-- **Type Safety:** Full TypeScript with strict mode
-- **Testing:** Comprehensive unit and integration tests
-- **Validation:** Runtime validation with Zod schemas
-- **Error Handling:** Graceful degradation and recovery
-
-### DevOps Practices
-
-- **Health Checks:** Kubernetes-ready probes
-- **Monitoring:** Structured logging and metrics
-- **CI/CD Ready:** Test automation and container builds
-- **Documentation:** Inline docs and comprehensive README
-
----
-
-## 🚀 Deployment
+## Deployment
 
 ### Docker Compose (Production)
 
-```bash
-# Production deployment
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-```
-
-### Kubernetes (Future)
-
 ```yaml
-# Deployment manifest included in k8s/ directory (future)
-kubectl apply -f k8s/
+version: '3.8'
+services:
+  api:
+    build: .
+    ports:
+      - '8000:8000'
+    environment:
+      - DATABASE_URL=postgresql://postgres:pass@postgres:5432/live_score
+      - REDIS_URL=redis://redis:6379
+    deploy:
+      replicas: 3
+
+  worker:
+    build: .
+    command: npm run worker
+    environment:
+      - DATABASE_URL=postgresql://postgres:pass@postgres:5432/live_score
+      - REDIS_URL=redis://redis:6379
+
+  postgres:
+    image: postgres:16-alpine
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redisdata:/data
 ```
 
----
+## Key Achievements
 
-## 📚 Documentation
+✅ **TypeScript Migration**: Complete codebase converted from JavaScript with strict mode
+✅ **Real-time Architecture**: WebSocket + Redis Pub/Sub for horizontal scaling
+✅ **Background Jobs**: BullMQ for match status automation
+✅ **Comprehensive Testing**: Unit tests, integration tests, load tests
+✅ **DevOps Ready**: Docker Compose, monitoring scripts, automated setup
+✅ **Documentation**: 6 detailed documentation files
 
-- [Phase 1: Infrastructure](./docs/phase-1-infrastructure.md)
-- [Phase 2: Redis Integration](./docs/phase-2-redis-integration.md)
-- [Phase 3: Background Jobs](./docs/phase-3-background-jobs.md)
-- [Phase 4: Testing](./docs/phase-4-testing.md)
-- [Phase 5: TypeScript](./docs/phase-5-typescript.md)
+## Author
 
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Write tests for new functionality
-4. Ensure all tests pass
-5. Submit a pull request
+[Nemanja Stojanovic] - [GitHub] - [LinkedIn/GitHub]
 
 ---
 
-## 🙏 Acknowledgments
-
-- [Express](https://expressjs.com/) - Web framework
-- [Drizzle ORM](https://orm.drizzle.team/) - Database ORM
-- [BullMQ](https://docs.bullmq.io/) - Job queues
-- [Redis](https://redis.io/) - Cache & pub/sub
-- [Vitest](https://vitest.dev/) - Testing framework
-
----
+**Built with modern cloud-native architecture principles for production-scale deployments.**

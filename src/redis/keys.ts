@@ -71,19 +71,19 @@ export const queueKeys = {
    * Main job queue
    * @returns {string}
    */
-  main: (): string => 'queue:main',
+  main: (): string => 'main',
 
   /**
    * Job queue for match status transitions
    * @returns {string}
    */
-  matchStatus: (): string => 'queue:match:status',
+  matchStatus: (): string => 'match-status',
 
   /**
    * Job queue for cleanup tasks
    * @returns {string}
    */
-  cleanup: (): string => 'queue:cleanup',
+  cleanup: (): string => 'cleanup',
 };
 
 /**

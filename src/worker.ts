@@ -5,6 +5,7 @@
  * Run this file to start the worker process.
  */
 
+import 'dotenv/config';
 import { config } from './config/index.js';
 import { initRedis, closeRedis } from './redis/client.js';
 import { initQueues } from './jobs/queue.js';
